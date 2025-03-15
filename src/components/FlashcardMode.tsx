@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { Word, vocabularyService } from "../services/VocabularyService";
+import { Word, Module, vocabularyService } from "../services/VocabularyService";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -11,28 +11,65 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-const FlashcardMode: React.FC = () => {
+interface FlashcardModeProps {
+  selectedModuleId?: number;
+}
+
+const FlashcardMode: React.FC<FlashcardModeProps> = ({ selectedModuleId }) => {
+  const [modules, setModules] = useState<Module[]>([]);
+  const [currentModuleId, setCurrentModuleId] = useState<number | undefined>(selectedModuleId);
   const [words, setWords] = useState<Word[]>([]);
   const [flippedCards, setFlippedCards] = useState<Record<number, boolean>>({});
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const loadWords = () => {
-      const loadedWords = vocabularyService.getAllWords();
-      setWords(loadedWords);
+    const loadModules = () => {
+      const allModules = vocabularyService.getAllModules();
+      setModules(allModules);
       
-      // Initialize all cards as not flipped
-      const initialFlippedState: Record<number, boolean> = {};
-      loadedWords.forEach((word, index) => {
-        initialFlippedState[index] = false;
-      });
-      setFlippedCards(initialFlippedState);
-      
-      setIsLoading(false);
+      // If no module is selected or the selected module doesn't exist, use the first module
+      if (!selectedModuleId && allModules.length > 0) {
+        setCurrentModuleId(allModules[0].id);
+      } else {
+        setCurrentModuleId(selectedModuleId);
+      }
     };
-    loadWords();
-  }, []);
+    
+    loadModules();
+  }, [selectedModuleId]);
+  
+  useEffect(() => {
+    if (currentModuleId) {
+      loadWordsForModule(currentModuleId);
+    }
+  }, [currentModuleId]);
+
+  const loadWordsForModule = (moduleId: number) => {
+    setIsLoading(true);
+    const loadedWords = vocabularyService.getWordsByModuleId(moduleId);
+    setWords(loadedWords);
+    
+    // Initialize all cards as not flipped
+    const initialFlippedState: Record<number, boolean> = {};
+    loadedWords.forEach((_, index) => {
+      initialFlippedState[index] = false;
+    });
+    setFlippedCards(initialFlippedState);
+    
+    setIsLoading(false);
+  };
+
+  const handleModuleChange = (moduleId: string) => {
+    setCurrentModuleId(Number(moduleId));
+  };
 
   const handleFlip = (index: number) => {
     setFlippedCards((prev) => ({
@@ -45,13 +82,35 @@ const FlashcardMode: React.FC = () => {
     return <div className="flex justify-center items-center h-64">Loading...</div>;
   }
 
+  if (modules.length === 0) {
+    return <div className="text-center p-4">No vocabulary modules found.</div>;
+  }
+
   if (words.length === 0) {
-    return <div className="text-center p-4">No vocabulary words found.</div>;
+    return <div className="text-center p-4">No vocabulary words found in this module.</div>;
   }
 
   return (
     <div className="flex flex-col items-center gap-6 py-6">
       <h2 className="text-2xl font-bold mb-4">Flashcard Mode</h2>
+      
+      <div className="w-full max-w-md mb-4">
+        <Select 
+          value={currentModuleId?.toString()} 
+          onValueChange={handleModuleChange}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select a module" />
+          </SelectTrigger>
+          <SelectContent>
+            {modules.map(module => (
+              <SelectItem key={module.id} value={module.id.toString()}>
+                {module.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
       
       <div className="w-full max-w-md">
         <Carousel className="w-full">

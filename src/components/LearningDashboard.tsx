@@ -1,8 +1,16 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Book, CheckSquare, Shuffle } from "lucide-react";
+import { Book, CheckSquare, Shuffle, FolderOpen } from "lucide-react";
+import { Module, vocabularyService } from "../services/VocabularyService";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ModeTileProps {
   title: string;
@@ -36,10 +44,38 @@ const ModeTile: React.FC<ModeTileProps> = ({
 };
 
 interface LearningDashboardProps {
-  onSelectMode: (mode: string) => void;
+  onSelectMode: (mode: string, moduleId?: number) => void;
 }
 
 const LearningDashboard: React.FC<LearningDashboardProps> = ({ onSelectMode }) => {
+  const [modules, setModules] = useState<Module[]>([]);
+  const [selectedModuleId, setSelectedModuleId] = useState<string>("");
+  
+  useEffect(() => {
+    const loadModules = () => {
+      const allModules = vocabularyService.getAllModules();
+      setModules(allModules);
+      
+      if (allModules.length > 0) {
+        setSelectedModuleId(allModules[0].id.toString());
+      }
+    };
+    
+    loadModules();
+  }, []);
+
+  const handleModuleChange = (moduleId: string) => {
+    setSelectedModuleId(moduleId);
+  };
+
+  const handleSelectMode = (mode: string) => {
+    if (selectedModuleId) {
+      onSelectMode(mode, parseInt(selectedModuleId));
+    } else {
+      onSelectMode(mode);
+    }
+  };
+  
   return (
     <div className="flex flex-col items-center gap-8 py-8">
       <div className="text-center">
@@ -47,13 +83,33 @@ const LearningDashboard: React.FC<LearningDashboardProps> = ({ onSelectMode }) =
         <p className="text-gray-600">Select a learning mode to get started</p>
       </div>
       
+      {modules.length > 0 && (
+        <div className="w-full max-w-md mb-2">
+          <Select 
+            value={selectedModuleId} 
+            onValueChange={handleModuleChange}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a module" />
+            </SelectTrigger>
+            <SelectContent>
+              {modules.map(module => (
+                <SelectItem key={module.id} value={module.id.toString()}>
+                  {module.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+      
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-4xl">
         <ModeTile
           title="Flashcards"
           description="Review vocabulary with interactive flashcards"
           icon={<Book size={24} className="text-app-blue" />}
           color="border-app-blue"
-          onClick={() => onSelectMode("flashcard")}
+          onClick={() => handleSelectMode("flashcard")}
         />
         
         <ModeTile
@@ -61,7 +117,7 @@ const LearningDashboard: React.FC<LearningDashboardProps> = ({ onSelectMode }) =
           description="Test your knowledge with multiple choice questions"
           icon={<CheckSquare size={24} className="text-app-green" />}
           color="border-app-green"
-          onClick={() => onSelectMode("multiple-choice")}
+          onClick={() => handleSelectMode("multiple-choice")}
         />
         
         <ModeTile
@@ -69,9 +125,18 @@ const LearningDashboard: React.FC<LearningDashboardProps> = ({ onSelectMode }) =
           description="Match words with their translations"
           icon={<Shuffle size={24} className="text-app-purple" />}
           color="border-app-purple"
-          onClick={() => onSelectMode("matching")}
+          onClick={() => handleSelectMode("matching")}
         />
       </div>
+      
+      <Button 
+        variant="outline" 
+        className="mt-4 flex items-center gap-2"
+        onClick={() => onSelectMode("folders")}
+      >
+        <FolderOpen size={16} />
+        Manage Folders & Modules
+      </Button>
     </div>
   );
 };
