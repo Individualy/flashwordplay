@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from "react";
 import { 
   Card, 
@@ -87,8 +86,10 @@ const ModuleCreator: React.FC<ModuleCreatorProps> = ({
   };
 
   const parseFileContent = (content: string) => {
-    // Expecting format: word,translation,example
-    // Each line is a new word entry
+    const tabCount = (content.match(/\t/g) || []).length;
+    const commaCount = (content.match(/,/g) || []).length;
+    const delimiter = tabCount > commaCount ? '\t' : ',';
+    
     const lines = content.split('\n').filter(line => line.trim());
     
     if (lines.length === 0) {
@@ -97,7 +98,7 @@ const ModuleCreator: React.FC<ModuleCreatorProps> = ({
     }
 
     const parsedWords: WordEntry[] = lines.map((line, index) => {
-      const parts = line.split(',').map(part => part.trim());
+      const parts = line.split(delimiter).map(part => part.trim());
       return {
         id: index + 1,
         word: parts[0] || "",
@@ -106,8 +107,15 @@ const ModuleCreator: React.FC<ModuleCreatorProps> = ({
       };
     });
 
-    setWords(parsedWords);
-    toast.success(`Imported ${parsedWords.length} words from file`);
+    const validWords = parsedWords.filter(word => word.word && word.translation);
+    
+    if (validWords.length === 0) {
+      toast.error("No valid word entries found in the file");
+      return;
+    }
+
+    setWords(validWords);
+    toast.success(`Imported ${validWords.length} words from file`);
   };
 
   const handleSubmit = () => {
@@ -122,14 +130,12 @@ const ModuleCreator: React.FC<ModuleCreatorProps> = ({
       return;
     }
 
-    // Create the module
     const newModule = vocabularyService.createModule(folderId, moduleName);
     if (!newModule) {
       toast.error("Failed to create module");
       return;
     }
 
-    // Add all words to the module
     validWords.forEach(word => {
       vocabularyService.addWordToModule(newModule.id, {
         word: word.word,
