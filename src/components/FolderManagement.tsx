@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { 
   vocabularyService, 
@@ -42,9 +41,11 @@ import {
   Plus,
   Pencil,
   Trash,
-  FileText
+  FileText,
+  Upload
 } from "lucide-react";
 import { toast } from "sonner";
+import ModuleCreator from "./ModuleCreator";
 
 interface FormDialogProps {
   title: string;
@@ -201,7 +202,6 @@ const FolderManagement: React.FC = () => {
   const [expandedFolders, setExpandedFolders] = useState<Record<number, boolean>>({});
   const [expandedModules, setExpandedModules] = useState<Record<number, boolean>>({});
   
-  // Form dialogs state
   const [folderDialog, setFolderDialog] = useState({ open: false, isEdit: false, currentId: 0, defaultValue: "" });
   const [moduleDialog, setModuleDialog] = useState({ open: false, isEdit: false, folderId: 0, currentId: 0, defaultValue: "" });
   const [wordDialog, setWordDialog] = useState({ 
@@ -212,6 +212,9 @@ const FolderManagement: React.FC = () => {
     defaultValues: { word: "", translation: "", example: "" } 
   });
 
+  const [showModuleCreator, setShowModuleCreator] = useState(false);
+  const [selectedFolderId, setSelectedFolderId] = useState<number | null>(null);
+
   useEffect(() => {
     loadFolders();
   }, []);
@@ -220,14 +223,12 @@ const FolderManagement: React.FC = () => {
     const loadedFolders = vocabularyService.getAllFolders();
     setFolders(loadedFolders);
     
-    // Initialize expanded state for folders
     const initialExpandedFolders: Record<number, boolean> = {};
     loadedFolders.forEach(folder => {
       initialExpandedFolders[folder.id] = false;
     });
     setExpandedFolders(initialExpandedFolders);
     
-    // Initialize expanded state for modules
     const initialExpandedModules: Record<number, boolean> = {};
     loadedFolders.forEach(folder => {
       folder.modules.forEach(module => {
@@ -251,7 +252,6 @@ const FolderManagement: React.FC = () => {
     }));
   };
 
-  // Folder CRUD operations
   const handleAddFolder = () => {
     setFolderDialog({ open: true, isEdit: false, currentId: 0, defaultValue: "" });
   };
@@ -291,8 +291,12 @@ const FolderManagement: React.FC = () => {
     }
   };
 
-  // Module CRUD operations
   const handleAddModule = (folderId: number) => {
+    setSelectedFolderId(folderId);
+    setShowModuleCreator(true);
+  };
+
+  const handleAdvancedAddModule = (folderId: number) => {
     setModuleDialog({ 
       open: true, 
       isEdit: false, 
@@ -306,7 +310,7 @@ const FolderManagement: React.FC = () => {
     setModuleDialog({ 
       open: true, 
       isEdit: true, 
-      folderId: 0, // Not needed for edit
+      folderId: 0,
       currentId: module.id, 
       defaultValue: module.name 
     });
@@ -342,7 +346,12 @@ const FolderManagement: React.FC = () => {
     }
   };
 
-  // Word CRUD operations
+  const handleModuleCreated = () => {
+    setShowModuleCreator(false);
+    setSelectedFolderId(null);
+    loadFolders();
+  };
+
   const handleAddWord = (moduleId: number) => {
     setWordDialog({
       open: true,
@@ -400,6 +409,19 @@ const FolderManagement: React.FC = () => {
       }
     }
   };
+
+  if (showModuleCreator && selectedFolderId) {
+    return (
+      <ModuleCreator 
+        folderId={selectedFolderId} 
+        onModuleCreated={handleModuleCreated} 
+        onCancel={() => {
+          setShowModuleCreator(false);
+          setSelectedFolderId(null);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="w-full max-w-4xl mx-auto">
@@ -593,7 +615,6 @@ const FolderManagement: React.FC = () => {
         </div>
       )}
 
-      {/* Form Dialogs */}
       <FormDialog
         title={folderDialog.isEdit ? "Edit Folder" : "Add Folder"}
         description={folderDialog.isEdit ? "Edit the folder details below." : "Add a new folder for organizing vocabulary modules."}

@@ -179,6 +179,31 @@ export class VocabularyService {
     return undefined;
   }
 
+  addWordsToModule(moduleId: number, words: Omit<Word, "id">[]): Word[] {
+    const addedWords: Word[] = [];
+    words.forEach(word => {
+      const addedWord = this.addWordToModule(moduleId, word);
+      if (addedWord) {
+        addedWords.push(addedWord);
+      }
+    });
+    return addedWords;
+  }
+
+  importWordsFromText(moduleId: number, text: string, delimiter: string = ','): Word[] {
+    const lines = text.split('\n').filter(line => line.trim());
+    const words: Omit<Word, "id">[] = lines.map(line => {
+      const parts = line.split(delimiter).map(part => part.trim());
+      return {
+        word: parts[0] || "",
+        translation: parts[1] || "",
+        example: parts[2] || ""
+      };
+    }).filter(word => word.word && word.translation);
+
+    return this.addWordsToModule(moduleId, words);
+  }
+
   updateWordInModule(moduleId: number, wordId: number, updatedWord: Omit<Word, "id">): Word | undefined {
     const module = this.getModuleById(moduleId);
     if (module) {
