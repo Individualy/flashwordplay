@@ -1,0 +1,65 @@
+
+{
+  "words": [
+    {
+      "id": 1,
+      "word": "hello",
+      "translation": "xin chào",
+      "example": "Hello, how are you today?"
+    },
+    {
+      "id": 2,
+      "word": "goodbye",
+      "translation": "tạm biệt",
+      "example": "I have to leave now, goodbye!"
+    },
+    {
+      "id": 3,
+      "word": "friend",
+      "translation": "bạn",
+      "example": "She's my best friend since childhood."
+    },
+    {
+      "id": 4,
+      "word": "book",
+      "translation": "quyển sách",
+      "example": "I'm reading an interesting book."
+    },
+    {
+      "id": 5,
+      "word": "teacher",
+      "translation": "giáo viên",
+      "example": "Our teacher is very kind and patient."
+    },
+    {
+      "id": 6,
+      "word": "student",
+      "translation": "học sinh",
+      "example": "The student asked a good question."
+    },
+    {
+      "id": 7,
+      "word": "school",
+      "translation": "trường học",
+      "example": "My school is not far from here."
+    },
+    {
+      "id": 8,
+      "word": "house",
+      "translation": "ngôi nhà",
+      "example": "They live in a beautiful house."
+    },
+    {
+      "id": 9,
+      "word": "water",
+      "translation": "nước",
+      "example": "Would you like a glass of water?"
+    },
+    {
+      "id": 10,
+      "word": "food",
+      "translation": "thức ăn",
+      "example": "The food at this restaurant is delicious."
+    }
+  ]
+}
