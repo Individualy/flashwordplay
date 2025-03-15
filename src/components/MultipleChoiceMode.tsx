@@ -19,6 +19,7 @@ const MultipleChoiceMode: React.FC = () => {
   const [score, setScore] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isAnswered, setIsAnswered] = useState(false);
+  const [incorrectAttempts, setIncorrectAttempts] = useState<Record<number, string[]>>({});
 
   useEffect(() => {
     const loadQuestions = () => {
@@ -38,6 +39,14 @@ const MultipleChoiceMode: React.FC = () => {
       });
       
       setQuestions(quizQuestions);
+      
+      // Initialize incorrect attempts record
+      const initialIncorrectAttempts: Record<number, string[]> = {};
+      quizQuestions.forEach((_, index) => {
+        initialIncorrectAttempts[index] = [];
+      });
+      setIncorrectAttempts(initialIncorrectAttempts);
+      
       setIsLoading(false);
     };
     
@@ -45,16 +54,21 @@ const MultipleChoiceMode: React.FC = () => {
   }, []);
 
   const handleSelectAnswer = (answer: string) => {
-    if (isAnswered) return;
-    
     setSelectedAnswer(answer);
-    setIsAnswered(true);
     
     if (answer === questions[currentIndex].correctAnswer) {
+      // Correct answer
       setScore((prev) => prev + 1);
+      setIsAnswered(true);
       toast.success("Correct answer!");
     } else {
-      toast.error("Incorrect answer!");
+      // Incorrect answer
+      toast.error("Try again!");
+      // Add to incorrect attempts
+      setIncorrectAttempts((prev) => ({
+        ...prev,
+        [currentIndex]: [...prev[currentIndex], answer]
+      }));
     }
   };
 
@@ -78,6 +92,7 @@ const MultipleChoiceMode: React.FC = () => {
   }
 
   const currentQuestion = questions[currentIndex];
+  const currentIncorrectAttempts = incorrectAttempts[currentIndex] || [];
 
   return (
     <div className="flex flex-col items-center gap-6 py-6">
@@ -92,33 +107,41 @@ const MultipleChoiceMode: React.FC = () => {
           </div>
           
           <div className="space-y-3">
-            {currentQuestion.options.map((option, index) => (
-              <Button
-                key={index}
-                variant={selectedAnswer === option 
-                  ? option === currentQuestion.correctAnswer 
-                    ? "default" 
-                    : "destructive"
-                  : "outline"}
-                className={`w-full justify-start h-auto py-3 px-4 ${
-                  isAnswered && option === currentQuestion.correctAnswer
-                    ? "border-green-500 border-2"
-                    : ""
-                }`}
-                onClick={() => handleSelectAnswer(option)}
-                disabled={isAnswered}
-              >
-                <div className="flex justify-between w-full items-center">
-                  <span>{option}</span>
-                  {isAnswered && option === currentQuestion.correctAnswer && (
-                    <Check className="h-5 w-5 text-green-500" />
-                  )}
-                  {isAnswered && selectedAnswer === option && option !== currentQuestion.correctAnswer && (
-                    <X className="h-5 w-5 text-red-500" />
-                  )}
-                </div>
-              </Button>
-            ))}
+            {currentQuestion.options.map((option, index) => {
+              const isIncorrectAttempt = currentIncorrectAttempts.includes(option);
+              const isCorrect = option === currentQuestion.correctAnswer;
+              const isDisabled = isIncorrectAttempt || (isAnswered && !isCorrect);
+              
+              return (
+                <Button
+                  key={index}
+                  variant={
+                    isIncorrectAttempt 
+                      ? "destructive" 
+                      : selectedAnswer === option && isCorrect
+                        ? "default"
+                        : "outline"
+                  }
+                  className={`w-full justify-start h-auto py-3 px-4 ${
+                    isAnswered && isCorrect
+                      ? "border-green-500 border-2"
+                      : ""
+                  }`}
+                  onClick={() => handleSelectAnswer(option)}
+                  disabled={isDisabled}
+                >
+                  <div className="flex justify-between w-full items-center">
+                    <span>{option}</span>
+                    {isIncorrectAttempt && (
+                      <X className="h-5 w-5 text-red-500" />
+                    )}
+                    {isAnswered && isCorrect && option === selectedAnswer && (
+                      <Check className="h-5 w-5 text-green-500" />
+                    )}
+                  </div>
+                </Button>
+              );
+            })}
           </div>
         </Card>
       </div>
